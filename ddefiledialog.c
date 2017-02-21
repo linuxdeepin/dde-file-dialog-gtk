@@ -396,6 +396,18 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
 {
     (void)object;
     (void)user_data;
+
+    guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
+    gtk_timeout_remove(timeout_handler_id);
+}
+
+static void d_heartbeat_filedialog(GtkWidget *widget_ghost)
+{
+    g_print("d_heartbeat_filedialog\n");
+
+    d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost,
+                                                "makeHeartbeat",
+                                                NULL, NULL, NULL);
 }
 
 GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
@@ -441,7 +453,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
     }
 
     gtk_window_set_decorated(GTK_WINDOW(result), FALSE);
-//    gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
     gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
     gtk_window_set_opacity(GTK_WINDOW(result), 0);
     gtk_widget_set_sensitive(result, FALSE);
@@ -477,6 +489,19 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                         result);
 
     gtk_file_chooser_set_action(GTK_FILE_CHOOSER(result), action);
+
+    // heartbeat for dbus dialog
+
+    int interval = -1;
+
+    if (d_dbus_filedialog_get_property_by_ghost_widget_sync(result,
+                                                            "heartbeatInterval",
+                                                            "i",
+                                                            &interval)) {
+        guint timeout_handler_id = gtk_timeout_add(MAX(1 * 1000, MIN((int)(interval / 1.5), interval - 5 * 1000)), d_heartbeat_filedialog, result);
+        g_object_set_data(GTK_OBJECT(result), D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id), timeout_handler_id);
+        g_signal_connect(result, "destroy", G_CALLBACK(d_on_gtk_filedialog_destroy), NULL);
+    }
 
     return result;
 }
