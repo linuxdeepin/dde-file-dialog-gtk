@@ -1,7 +1,7 @@
-diff --git a/gtk+2.0-2.24.31.orig/gtk/Makefile.am b/gtk+2.0-2.24.31/gtk/Makefile.am
+diff --git gtk+2.0-2.24.31.orig/gtk/Makefile.am gtk+2.0-2.24.31/gtk/Makefile.am
 index 8cc4536..c84162a 100644
---- a/gtk+2.0-2.24.31.orig/gtk/Makefile.am
-+++ b/gtk+2.0-2.24.31/gtk/Makefile.am
+--- gtk+2.0-2.24.31.orig/gtk/Makefile.am
++++ gtk+2.0-2.24.31/gtk/Makefile.am
 @@ -420,6 +420,7 @@ gtk_private_h_sources =		\
  
  # GTK+ C sources to build the library from
@@ -10,10 +10,10 @@ index 8cc4536..c84162a 100644
  	gtkquery.c		\
  	gtksearchengine.c	\
  	gtksearchenginesimple.c	\
-diff --git a/gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h b/gtk+2.0-2.24.31/gtk/gtkfilechooser.h
+diff --git gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h gtk+2.0-2.24.31/gtk/gtkfilechooser.h
 index aa27be4..832635c 100644
---- a/gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h
-+++ b/gtk+2.0-2.24.31/gtk/gtkfilechooser.h
+--- gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h
++++ gtk+2.0-2.24.31/gtk/gtkfilechooser.h
 @@ -117,29 +117,42 @@ GQuark gtk_file_chooser_error_quark (void);
  
  /* Configuration
@@ -206,10 +206,10 @@ index aa27be4..832635c 100644
  GSList *gtk_file_chooser_list_shortcut_folder_uris   (GtkFileChooser *chooser);
  
  G_END_DECLS
-diff --git a/gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h b/gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
+diff --git gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
 index 78c02d2..e83ef0c 100644
---- a/gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h
-+++ b/gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
+--- gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h
++++ gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
 @@ -54,6 +54,7 @@ struct _GtkFileChooserDialogClass
  };
  
