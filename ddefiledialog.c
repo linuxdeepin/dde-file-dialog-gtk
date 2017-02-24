@@ -377,8 +377,9 @@ static void d_on_dbus_filedialog_finished(GDBusConnection  *connection,
     (void)signal_name;
 
     gint32 dialog_code;
+    g_variant_get(parameters, "(i)", &dialog_code);
 
-    if (gtk_file_chooser_get_action(widget_ghost) == GTK_FILE_CHOOSER_ACTION_SAVE) {
+    if (dialog_code == Accepted && gtk_file_chooser_get_action(widget_ghost) == GTK_FILE_CHOOSER_ACTION_SAVE) {
         GFile *file = gtk_file_chooser_get_file(widget_ghost);
 
         if (file) {
@@ -387,8 +388,10 @@ static void d_on_dbus_filedialog_finished(GDBusConnection  *connection,
         }
     }
 
-    g_variant_get(parameters, "(i)", &dialog_code);
-    gtk_dialog_response(GTK_DIALOG(widget_ghost), dialog_code == Rejected ? GTK_RESPONSE_CANCEL : GTK_RESPONSE_ACCEPT);
+    gint accept_response_id ,rejept_response_id;
+
+    d_get_gtk_dialog_response_id(GTK_DIALOG(widget_ghost), &accept_response_id, &rejept_response_id);
+    gtk_dialog_response(GTK_DIALOG(widget_ghost), dialog_code == Rejected ? rejept_response_id : accept_response_id);
 }
 
 static void d_on_dbus_filedialog_selectionFilesChanged(GDBusConnection  *connection,
@@ -454,7 +457,9 @@ static void d_on_dbus_filedialog_currentUrlChanged(GDBusConnection  *connection,
 
     g_print("dbus file dialog current uri: %s\n", current_url);
 
-    gtk_file_chooser_set_current_folder_uri(widget_ghost, current_url);
+    GFile *file = g_file_new_for_uri (current_url);
+    GTK_FILE_CHOOSER_GET_IFACE (GTK_FILE_CHOOSER(widget_ghost))->set_current_folder (GTK_FILE_CHOOSER(widget_ghost), file, NULL);
+    g_object_unref (file);
     g_free(current_url);
 }
 
@@ -479,7 +484,9 @@ static void d_heartbeat_filedialog(GtkWidget *widget_ghost)
                                                               NULL, NULL, NULL);
 
     if (!ok) {
-        gtk_dialog_response(GTK_DIALOG(widget_ghost), GTK_RESPONSE_CANCEL);
+        gint rejept_response_id;
+        d_get_gtk_dialog_response_id(GTK_DIALOG(widget_ghost), NULL, &rejept_response_id);
+        gtk_dialog_response(GTK_DIALOG(widget_ghost), rejept_response_id);
     }
 }
 
@@ -526,8 +533,14 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
         FilterRule *rule = g_slist_nth_data(filter->rules, i);
 
         if (rule->type == FILTER_RULE_PATTERN) {
-            g_byte_array_append(byte_array, rule->u.pattern, strlen(rule->u.pattern));
-            g_byte_array_append(byte_array, " ", 1);
+            g_print("d_gtk_file_filter_to_string: %d: pattern: %s\n", i, rule->u.pattern);
+
+            if (!rule->u.pattern || strlen(rule->u.pattern) <= 0) {
+                g_byte_array_append(byte_array, "* ", 2);
+            } else {
+                g_byte_array_append(byte_array, rule->u.pattern, strlen(rule->u.pattern));
+                g_byte_array_append(byte_array, " ", 1);
+            }
         } else if (rule->type == FILTER_RULE_MIME_TYPE) {
             GVariantIter *patterns = NULL;
             gboolean ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("globPatternsForMime",
@@ -557,7 +570,15 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
             }
 
             g_variant_iter_free(patterns);
+        } else {
+            g_print("d_gtk_file_filter_to_string: %d: other rule type: %d\n", i, rule->type);
         }
+    }
+
+    if (byte_array->data[byte_array->len - 1] == '(') {
+        g_byte_array_free(byte_array, FALSE);
+
+        return NULL;
     }
 
     g_byte_array_remove_range(byte_array, byte_array->len - 1, 1);
@@ -585,6 +606,7 @@ static void d_update_filedialog_name_filters(GtkWidget *widget_ghost)
         gchar *str = g_malloc(string->len);
         strcpy(str, string->data);
         list[list_length++] = str;
+        g_print("d_update_filedialog_name_filters: %d: filter string: %s\n", i, string->data);
         g_byte_array_free(string, FALSE);
     }
 
@@ -603,6 +625,31 @@ static void d_update_filedialog_name_filters(GtkWidget *widget_ghost)
     g_slist_free(filter_list);
 }
 
+void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
+{
+    if (accept_id) {
+        if (gtk_dialog_get_widget_for_response(dialog, GTK_RESPONSE_OK)) {
+            *accept_id = GTK_RESPONSE_OK;
+        } else if (gtk_dialog_get_widget_for_response(dialog, GTK_RESPONSE_YES)) {
+            *accept_id = GTK_RESPONSE_YES;
+        } else if (gtk_dialog_get_widget_for_response(dialog, GTK_RESPONSE_APPLY)) {
+            *accept_id = GTK_RESPONSE_APPLY;
+        } else {
+            *accept_id = GTK_RESPONSE_ACCEPT;
+        }
+    }
+
+    if (reject_id) {
+        if (gtk_dialog_get_widget_for_response(dialog, GTK_RESPONSE_REJECT)) {
+            *reject_id = GTK_RESPONSE_REJECT;
+        } if (gtk_dialog_get_widget_for_response(dialog, GTK_RESPONSE_NO)) {
+            *reject_id = GTK_RESPONSE_NO;
+        } else {
+            *reject_id = GTK_RESPONSE_CANCEL;
+        }
+    }
+}
+
 GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                        GtkWindow            *parent,
                                        GtkFileChooserAction  action,
@@ -618,11 +665,18 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                                  varargs);
     va_end (varargs);
 
+    gboolean enable_dbus_dialog = FALSE;
+    gboolean ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("isUseFileChooserDialog",
+                                                                     NULL, "(b)", &enable_dbus_dialog);
+
+    if (ok && !enable_dbus_dialog)
+        return result;
+
     gchar *dbus_object_path = NULL;
-    gboolean ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("createDialog",
-                                                                     g_variant_new("(s)", ""),
-                                                                     "(o)",
-                                                                     &dbus_object_path);
+    ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("createDialog",
+                                                            g_variant_new("(s)", ""),
+                                                            "(o)",
+                                                            &dbus_object_path);
 
     if (!ok)
         return result;
@@ -976,7 +1030,7 @@ gboolean gtk_file_chooser_set_current_folder_file (GtkFileChooser *chooser, GFil
     g_return_val_if_fail (G_IS_FILE (file), FALSE);
     g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-    g_print("gtk_file_chooser_set_current_folder_file: %s\n", g_file_get_uri(file));
+    g_print("gtk_file_chooser_set_current_folder_file: uri: %s, path: %s\n", g_file_get_uri(file), g_file_get_path(file));
 
     d_dbus_filedialog_set_property_by_ghost_widget_sync(GTK_WIDGET(chooser),
                                                         "directoryUrl",
