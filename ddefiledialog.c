@@ -589,6 +589,12 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
 
 static void d_update_filedialog_name_filters(GtkWidget *widget_ghost)
 {
+    gchar *dbus_object_path = g_object_get_data(GTK_OBJECT(widget_ghost), D_STRINGIFY(_d_dbus_file_dialog_object_path));
+
+    if (!dbus_object_path) {
+        return;
+    }
+
     GSList *filter_list = gtk_file_chooser_list_filters(widget_ghost);
     int filter_list_length = g_slist_length(filter_list);
 
