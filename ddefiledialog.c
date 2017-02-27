@@ -413,7 +413,7 @@ static void d_on_dbus_filedialog_finished(GDBusConnection  *connection,
     d_get_gtk_dialog_response_id(GTK_DIALOG(widget_ghost), &accept_response_id, &reject_response_id);
     gtk_dialog_response(GTK_DIALOG(widget_ghost), dialog_code == Rejected ? reject_response_id : accept_response_id);
 
-    d_debug("accept response id: %d, reject response id: %d", accept_response_id, reject_response_id);
+    d_debug("accept response id: %d, reject response id: %d\n", accept_response_id, reject_response_id);
 }
 
 static void d_on_dbus_filedialog_selectionFilesChanged(GDBusConnection  *connection,
@@ -494,7 +494,7 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
     guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
     gtk_timeout_remove(timeout_handler_id);
 
-    d_debug("d_on_gtk_filedialog_destroy");
+    d_debug("d_on_gtk_filedialog_destroy\n");
 }
 
 static void d_heartbeat_filedialog(GtkWidget *widget_ghost)
@@ -692,6 +692,10 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                                  varargs);
     va_end (varargs);
 
+    if (getenv("_d_disable_filedialog")) {
+        return result;
+    }
+
     gboolean enable_dbus_dialog = FALSE;
     gboolean ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("isUseFileChooserDialog",
                                                                      NULL, "(b)", &enable_dbus_dialog);
@@ -726,15 +730,33 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     gtk_window_set_decorated(GTK_WINDOW(result), FALSE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
-    gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
-    gtk_window_set_opacity(GTK_WINDOW(result), 0);
-    gtk_widget_set_sensitive(result, FALSE);
+
+    d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
+
+    if (!getenv("_d_show_gtk_file_chooser_dialog"))
+        gtk_window_set_opacity(GTK_WINDOW(result), 0);
 
     if (parent) {
+        gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
         gtk_window_set_transient_for(GTK_WINDOW (result), parent);
+        gtk_widget_set_sensitive(result, FALSE);
     }
 
     g_object_set_data(GTK_OBJECT(result), D_STRINGIFY(_d_dbus_file_dialog_object_path), dbus_object_path);
+
+    // Sync current uri
+    gchar *current_folder_uri = gtk_file_chooser_get_current_folder_uri(result);
+
+    if (current_folder_uri) {
+        d_debug("gtk dialog current uri: %s\n", current_folder_uri);
+
+        d_dbus_filedialog_set_property_by_ghost_widget_sync(GTK_WIDGET(result),
+                                                            "directoryUrl",
+                                                            g_variant_new_string(current_folder_uri));
+        g_free(current_folder_uri);
+    } else {
+        d_on_dbus_filedialog_currentUrlChanged(NULL, NULL, NULL, NULL, NULL, NULL, result);
+    }
 
     // GTK widget mapping to DBus file dialog
     g_signal_connect(result, "show", G_CALLBACK(d_show_dbus_filedialog), result);
