@@ -902,6 +902,11 @@ void gtk_file_chooser_set_current_name(GtkFileChooser *chooser, const gchar *nam
     g_return_if_fail (name != NULL);
 
     GTK_FILE_CHOOSER_GET_IFACE (chooser)->set_current_name (chooser, name);
+
+    d_dbus_filedialog_call_by_ghost_widget_sync(chooser,
+                                                "setCurrentInputName",
+                                                g_variant_new("(s)", name),
+                                                NULL, NULL);
 }
 
 gchar *gtk_file_chooser_get_filename(GtkFileChooser *chooser)
