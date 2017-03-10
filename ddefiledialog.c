@@ -106,6 +106,45 @@ gtk_file_chooser_dialog_new_valist(const gchar              *title,
 
     return result;
 }
+
+static GSList *
+files_to_strings (GSList  *files,
+          gchar * (*convert_func) (GFile *file))
+{
+  GSList *strings;
+
+  strings = NULL;
+
+  for (; files; files = files->next)
+    {
+      GFile *file;
+      gchar *string;
+
+      file = files->data;
+      string = (* convert_func) (file);
+
+      if (string)
+    strings = g_slist_prepend (strings, string);
+    }
+
+  return g_slist_reverse (strings);
+}
+
+static gchar *
+file_to_uri_with_native_path (GFile *file)
+{
+  gchar *result = NULL;
+  gchar *native;
+
+  native = g_file_get_path (file);
+  if (native)
+    {
+      result = g_filename_to_uri (native, NULL, NULL); /* NULL-GError */
+      g_free (native);
+    }
+
+  return result;
+}
 //! End
 
 static GDBusConnection *
@@ -733,13 +772,14 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
 
-    if (!getenv("_d_show_gtk_file_chooser_dialog"))
+    if (!getenv("_d_show_gtk_file_chooser_dialog")) {
         gtk_window_set_opacity(GTK_WINDOW(result), 0);
 
-    if (parent) {
-        gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
-        gtk_window_set_transient_for(GTK_WINDOW (result), parent);
-        gtk_widget_set_sensitive(result, FALSE);
+        if (parent) {
+            gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
+            gtk_window_set_transient_for(GTK_WINDOW (result), parent);
+            gtk_widget_set_sensitive(result, FALSE);
+        }
     }
 
     g_object_set_data(GTK_OBJECT(result), D_STRINGIFY(_d_dbus_file_dialog_object_path), dbus_object_path);
@@ -947,10 +987,20 @@ gchar *gtk_file_chooser_get_filename(GtkFileChooser *chooser)
 
 //}
 
-//GSList *gtk_file_chooser_get_filenames(GtkFileChooser *chooser)
-//{
+GSList *gtk_file_chooser_get_filenames(GtkFileChooser *chooser)
+{
+    GSList *files, *result;
 
-//}
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), NULL);
+
+    files = gtk_file_chooser_get_files (chooser);
+
+    result = files_to_strings (files, g_file_get_path);
+    g_slist_foreach (files, (GFunc) g_object_unref, NULL);
+    g_slist_free (files);
+
+    return result;
+}
 
 gboolean gtk_file_chooser_set_current_folder(GtkFileChooser *chooser, const gchar *filename)
 {
@@ -974,10 +1024,34 @@ gboolean gtk_file_chooser_set_current_folder(GtkFileChooser *chooser, const gcha
 
 /* URI manipulation
  */
-//gchar *gtk_file_chooser_get_uri(GtkFileChooser *chooser)
-//{
+gchar *gtk_file_chooser_get_uri(GtkFileChooser *chooser)
+{
+    GFile *file;
+    gchar *result = NULL;
 
-//}
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), NULL);
+
+    file = gtk_file_chooser_get_file (chooser);
+    if (file)
+    {
+        if (gtk_file_chooser_get_local_only (chooser))
+        {
+            gchar *local = g_file_get_path (file);
+            if (local)
+            {
+                result = g_filename_to_uri (local, NULL, NULL);
+                g_free (local);
+            }
+        }
+        else
+        {
+            result = g_file_get_uri (file);
+        }
+        g_object_unref (file);
+    }
+
+    return result;
+}
 
 //gboolean gtk_file_chooser_set_uri (GtkFileChooser *chooser, const char *uri)
 //{
@@ -994,10 +1068,24 @@ gboolean gtk_file_chooser_set_current_folder(GtkFileChooser *chooser, const gcha
 
 //}
 
-//GSList * gtk_file_chooser_get_uris (GtkFileChooser *chooser)
-//{
+GSList * gtk_file_chooser_get_uris (GtkFileChooser *chooser)
+{
+    GSList *files, *result;
 
-//}
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), NULL);
+
+    files = gtk_file_chooser_get_files (chooser);
+
+    if (gtk_file_chooser_get_local_only (chooser))
+        result = files_to_strings (files, file_to_uri_with_native_path);
+    else
+        result = files_to_strings (files, g_file_get_uri);
+
+    g_slist_foreach (files, (GFunc) g_object_unref, NULL);
+    g_slist_free (files);
+
+    return result;
+}
 
 gboolean gtk_file_chooser_set_current_folder_uri (GtkFileChooser *chooser, const gchar *uri)
 {
