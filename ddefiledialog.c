@@ -691,6 +691,61 @@ static void d_update_filedialog_name_filters(GtkWidget *widget_ghost)
     g_slist_free(filter_list);
 }
 
+static void d_on_filedialog_selected_filter_changed(GDBusConnection  *connection,
+                                                    const gchar      *sender_name,
+                                                    const gchar      *object_path,
+                                                    const gchar      *interface_name,
+                                                    const gchar      *signal_name,
+                                                    GVariant         *parameters,
+                                                    GtkWidget        *widget_ghost)
+{
+    (void)connection;
+    (void)sender_name;
+    (void)object_path;
+    (void)interface_name;
+    (void)signal_name;
+    (void)parameters;
+
+    gchar *selected_filter = NULL;
+
+    gboolean ok = d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost,
+                                                              "selectedNameFilter",
+                                                              NULL,
+                                                              "(s)",
+                                                              &selected_filter);
+
+    if (!ok || !selected_filter) {
+        d_debug("Get dbus file dialog selected filter failed!\n");
+        return;
+    }
+
+    GList *list = gtk_file_chooser_list_filters(GTK_FILE_CHOOSER(widget_ghost));
+    int length = g_list_length(list);
+
+    for (int i = 0; i < length; ++i) {
+        GtkFileFilter *filter = GTK_FILE_FILTER(g_list_nth_data(list, i));
+
+        if (!filter)
+            continue;
+
+        GByteArray *array = d_gtk_file_filter_to_string(filter);
+
+        g_byte_array_append(array, "\0", 1);
+
+        d_debug("%d: %s, %s\n", i, selected_filter, array->data);
+
+        if (strcmp(selected_filter, array->data) == 0) {
+            g_object_set (GTK_FILE_CHOOSER(widget_ghost), "filter", filter, NULL);
+            g_byte_array_unref(array);
+            break;
+        }
+
+        g_byte_array_unref(array);
+    }
+
+    g_free(selected_filter);
+}
+
 void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
 {
     if (accept_id) {
@@ -821,6 +876,10 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
     d_dbus_filedialog_connection_signal(dbus_object_path,
                                         "currentUrlChanged",
                                         G_CALLBACK(d_on_dbus_filedialog_currentUrlChanged),
+                                        result);
+    d_dbus_filedialog_connection_signal(dbus_object_path,
+                                        "selectedNameFilterChanged",
+                                        G_CALLBACK(d_on_filedialog_selected_filter_changed),
                                         result);
 
     // heartbeat for dbus dialog
