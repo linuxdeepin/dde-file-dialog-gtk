@@ -39,6 +39,17 @@ typedef enum {
     Accepted = 1
 } DialogCode;
 
+typedef enum {
+    ShowDirsOnly                = 0x00000001,
+    DontResolveSymlinks         = 0x00000002,
+    DontConfirmOverwrite        = 0x00000004,
+    DontUseSheet                = 0x00000008,
+    DontUseNativeDialog         = 0x00000010,
+    ReadOnly                    = 0x00000020,
+    HideNameFilterDetails       = 0x00000040,
+    DontUseCustomDirectoryIcons = 0x00000080
+} Option;
+
 //! The code from libgtk+2.0 source
 struct _GtkFileFilter
 {
@@ -861,6 +872,10 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
     d_dbus_filedialog_call_by_ghost_widget_sync(result,
                                                 "setWindowTitle",
                                                 g_variant_new("(s)", title),
+                                                NULL, NULL);
+    d_dbus_filedialog_call_by_ghost_widget_sync(result,
+                                                "setOption",
+                                                g_variant_new("(ib)", (gint32)HideNameFilterDetails, True),
                                                 NULL, NULL);
 
     // DBus file dialog mapping to GTK widget
