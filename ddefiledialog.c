@@ -741,6 +741,9 @@ static void d_on_filedialog_selected_filter_changed(GDBusConnection  *connection
 
         GByteArray *array = d_gtk_file_filter_to_string(filter);
 
+        if (!array)
+            continue;
+
         g_byte_array_append(array, "\0", 1);
 
         d_debug("%d: %s, %s\n", i, selected_filter, array->data);
