@@ -843,6 +843,9 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     if (!getenv("_d_show_gtk_file_chooser_dialog")) {
         gtk_window_set_opacity(GTK_WINDOW(result), 0);
+        char invisible_bitmap_bits[] = { 0x0 };
+        GdkBitmap *bitmap = gdk_bitmap_create_from_data(NULL, invisible_bitmap_bits, 1, 1);
+        gtk_widget_shape_combine_mask(result, bitmap, 0, 0);
 
         if (parent) {
             gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
