@@ -580,8 +580,10 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
 
     GByteArray *byte_array = g_byte_array_new();
 
-    if (filter->name)
+    if (filter->name) {
         g_byte_array_append(byte_array, filter->name, strlen(filter->name));
+        d_debug("name: %s\n", filter->name);
+    }
 
     if (!filter->rules)
         return byte_array;
@@ -608,8 +610,20 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
             d_debug("%d: pattern: %s\n", i, rule->u.pattern);
 
             if (rule->u.pattern && strlen(rule->u.pattern) > 0) {
-                g_byte_array_append(byte_array, rule->u.pattern, strlen(rule->u.pattern));
+                int length = strlen(rule->u.pattern);
+                gchar *new_pattern = (gchar*)malloc(sizeof(gchar) * length);
+
+                for (int i = 0; i < length; ++i) {
+                    if (rule->u.pattern[i] == '(' || rule->u.pattern[i] == ')')
+                        new_pattern[i] = ' ';
+                    else
+                        new_pattern[i] = rule->u.pattern[i];
+                }
+
+                g_byte_array_append(byte_array, new_pattern, length);
                 g_byte_array_append(byte_array, " ", 1);
+
+                free(new_pattern);
             }
         } else if (rule->type == FILTER_RULE_MIME_TYPE) {
             GVariantIter *patterns = NULL;
