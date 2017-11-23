@@ -1,220 +1,317 @@
-diff --git gtk+2.0-2.24.31.orig/gtk/Makefile.am gtk+2.0-2.24.31/gtk/Makefile.am
-index 8cc4536..c84162a 100644
---- gtk+2.0-2.24.31.orig/gtk/Makefile.am
-+++ gtk+2.0-2.24.31/gtk/Makefile.am
-@@ -420,6 +420,7 @@ gtk_private_h_sources =		\
- 
- # GTK+ C sources to build the library from
- gtk_base_c_sources =            \
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ gtk+3.0 (3.22.17-1) unstable; urgency=medium
+ .
+   * New upstream release.
+Author: Emilio Pozuelo Monfort <pochu@debian.org>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2017-11-24
+
+--- gtk+3.0-3.22.17.orig/gtk/Makefile.am
++++ gtk+3.0-3.22.17/gtk/Makefile.am
+@@ -595,6 +595,7 @@ gtk_base_c_sources = 		\
+ 	$(a11y_c_sources)	\
+ 	$(deprecated_c_sources)	\
+ 	$(inspector_c_sources)	\
 +	ddefiledialog.c		\
- 	gtkquery.c		\
- 	gtksearchengine.c	\
- 	gtksearchenginesimple.c	\
-diff --git gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h gtk+2.0-2.24.31/gtk/gtkfilechooser.h
-index aa27be4..832635c 100644
---- gtk+2.0-2.24.31.orig/gtk/gtkfilechooser.h
-+++ gtk+2.0-2.24.31/gtk/gtkfilechooser.h
-@@ -117,29 +117,42 @@ GQuark gtk_file_chooser_error_quark (void);
+ 	gtkactionmuxer.c	\
+ 	gtkactionobserver.c	\
+ 	gtkactionobservable.c	\
+--- gtk+3.0-3.22.17.orig/gtk/gtkfilechooser.h
++++ gtk+3.0-3.22.17/gtk/gtkfilechooser.h
+@@ -117,206 +117,269 @@ GQuark gtk_file_chooser_error_quark (voi
  
  /* Configuration
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_action          (GtkFileChooser       *chooser,
  							   GtkFileChooserAction  action);
-+__attribute__((weak))		   
++__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GtkFileChooserAction gtk_file_chooser_get_action          (GtkFileChooser       *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_local_only      (GtkFileChooser       *chooser,
  							   gboolean              local_only);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean             gtk_file_chooser_get_local_only      (GtkFileChooser       *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_select_multiple (GtkFileChooser       *chooser,
  							   gboolean              select_multiple);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean             gtk_file_chooser_get_select_multiple (GtkFileChooser       *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_show_hidden     (GtkFileChooser       *chooser,
  							   gboolean              show_hidden);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean             gtk_file_chooser_get_show_hidden     (GtkFileChooser       *chooser);
  
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_do_overwrite_confirmation (GtkFileChooser *chooser,
  								     gboolean        do_overwrite_confirmation);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean             gtk_file_chooser_get_do_overwrite_confirmation (GtkFileChooser *chooser);
  
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void                 gtk_file_chooser_set_create_folders  (GtkFileChooser       *chooser,
  							  gboolean               create_folders);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean             gtk_file_chooser_get_create_folders (GtkFileChooser *chooser);
  
  /* Suggested name for the Save-type actions
   */
 +__attribute__((weak))
- void     gtk_file_chooser_set_current_name   (GtkFileChooser *chooser,
- 					      const gchar    *name);
- 
-@@ -160,103 +173,148 @@ void     gtk_file_chooser_set_current_name   (GtkFileChooser *chooser,
- #define gtk_file_chooser_list_shortcut_folders gtk_file_chooser_list_shortcut_folders_utf8
- #endif
- 
+ GDK_AVAILABLE_IN_ALL
+ void        gtk_file_chooser_set_current_name  (GtkFileChooser *chooser,
+ 					        const gchar    *name);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_3_10
+ gchar *gtk_file_chooser_get_current_name (GtkFileChooser *chooser);
+ 
+ /* Filename manipulation
+  */
++__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gchar *  gtk_file_chooser_get_filename       (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_filename       (GtkFileChooser *chooser,
  					      const char     *filename);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_select_filename    (GtkFileChooser *chooser,
  					      const char     *filename);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void     gtk_file_chooser_unselect_filename  (GtkFileChooser *chooser,
  					      const char     *filename);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void     gtk_file_chooser_select_all         (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void     gtk_file_chooser_unselect_all       (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList * gtk_file_chooser_get_filenames      (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_current_folder (GtkFileChooser *chooser,
  					      const gchar    *filename);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gchar *  gtk_file_chooser_get_current_folder (GtkFileChooser *chooser);
  
  
  /* URI manipulation
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gchar *  gtk_file_chooser_get_uri                (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_uri                (GtkFileChooser *chooser,
  						  const char     *uri);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_select_uri             (GtkFileChooser *chooser,
  						  const char     *uri);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void     gtk_file_chooser_unselect_uri           (GtkFileChooser *chooser,
  						  const char     *uri);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList * gtk_file_chooser_get_uris               (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_current_folder_uri (GtkFileChooser *chooser,
  						  const gchar    *uri);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gchar *  gtk_file_chooser_get_current_folder_uri (GtkFileChooser *chooser);
  
  /* GFile manipulation */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GFile *  gtk_file_chooser_get_file                (GtkFileChooser  *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_file                (GtkFileChooser  *chooser,
                                                     GFile           *file,
                                                     GError         **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_select_file             (GtkFileChooser  *chooser,
                                                     GFile           *file,
                                                     GError         **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void     gtk_file_chooser_unselect_file           (GtkFileChooser  *chooser,
                                                     GFile           *file);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList * gtk_file_chooser_get_files               (GtkFileChooser  *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_set_current_folder_file (GtkFileChooser  *chooser,
                                                     GFile           *file,
                                                     GError         **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GFile *  gtk_file_chooser_get_current_folder_file (GtkFileChooser  *chooser);
  
  /* Preview widget
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void       gtk_file_chooser_set_preview_widget        (GtkFileChooser *chooser,
  						       GtkWidget      *preview_widget);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GtkWidget *gtk_file_chooser_get_preview_widget        (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void       gtk_file_chooser_set_preview_widget_active (GtkFileChooser *chooser,
  						       gboolean        active);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean   gtk_file_chooser_get_preview_widget_active (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void       gtk_file_chooser_set_use_preview_label     (GtkFileChooser *chooser,
  						       gboolean        use_label);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean   gtk_file_chooser_get_use_preview_label     (GtkFileChooser *chooser);
  
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  char  *gtk_file_chooser_get_preview_filename (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  char  *gtk_file_chooser_get_preview_uri      (GtkFileChooser *chooser);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GFile *gtk_file_chooser_get_preview_file     (GtkFileChooser *chooser);
  
  /* Extra widget
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void       gtk_file_chooser_set_extra_widget (GtkFileChooser *chooser,
  					      GtkWidget      *extra_widget);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GtkWidget *gtk_file_chooser_get_extra_widget (GtkFileChooser *chooser);
  
  /* List of user selectable filters
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void    gtk_file_chooser_add_filter    (GtkFileChooser *chooser,
  					GtkFileFilter  *filter);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void    gtk_file_chooser_remove_filter (GtkFileChooser *chooser,
  					GtkFileFilter  *filter);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList *gtk_file_chooser_list_filters  (GtkFileChooser *chooser);
  
  /* Current filter
   */
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  void           gtk_file_chooser_set_filter (GtkFileChooser *chooser,
  					   GtkFileFilter  *filter);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GtkFileFilter *gtk_file_chooser_get_filter (GtkFileChooser *chooser);
  
  /* Per-application shortcut folders */
  
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_add_shortcut_folder    (GtkFileChooser *chooser,
  						  const char     *folder,
  						  GError        **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_remove_shortcut_folder (GtkFileChooser *chooser,
  						  const char     *folder,
  						  GError        **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList *gtk_file_chooser_list_shortcut_folders   (GtkFileChooser *chooser);
  
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_add_shortcut_folder_uri    (GtkFileChooser *chooser,
  						      const char     *uri,
  						      GError        **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  gboolean gtk_file_chooser_remove_shortcut_folder_uri (GtkFileChooser *chooser,
  						      const char     *uri,
  						      GError        **error);
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GSList *gtk_file_chooser_list_shortcut_folder_uris   (GtkFileChooser *chooser);
  
- G_END_DECLS
-diff --git gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
-index 78c02d2..e83ef0c 100644
---- gtk+2.0-2.24.31.orig/gtk/gtkfilechooserdialog.h
-+++ gtk+2.0-2.24.31/gtk/gtkfilechooserdialog.h
-@@ -54,6 +54,7 @@ struct _GtkFileChooserDialogClass
- };
++__attribute__((weak))
+ GDK_AVAILABLE_IN_3_22
+ void        gtk_file_chooser_add_choice              (GtkFileChooser  *chooser,
+                                                       const char      *id,
+                                                       const char      *label,
+                                                       const char     **options,
+                                                       const char     **option_labels);
++__attribute__((weak))
+ GDK_AVAILABLE_IN_3_22
+ void        gtk_file_chooser_remove_choice           (GtkFileChooser  *chooser,
+                                                       const char      *id);
++__attribute__((weak))
+ GDK_AVAILABLE_IN_3_22
+ void        gtk_file_chooser_set_choice              (GtkFileChooser  *chooser,
+                                                       const char      *id,
+                                                       const char      *option);
++__attribute__((weak))
+ GDK_AVAILABLE_IN_3_22
+ const char *gtk_file_chooser_get_choice              (GtkFileChooser  *chooser,
+                                                       const char      *id);
+--- gtk+3.0-3.22.17.orig/gtk/gtkfilechooserdialog.h
++++ gtk+3.0-3.22.17/gtk/gtkfilechooserdialog.h
+@@ -59,6 +59,7 @@ struct _GtkFileChooserDialogClass
  
+ GDK_AVAILABLE_IN_ALL
  GType      gtk_file_chooser_dialog_get_type         (void) G_GNUC_CONST;
 +__attribute__((weak))
+ GDK_AVAILABLE_IN_ALL
  GtkWidget *gtk_file_chooser_dialog_new              (const gchar          *title,
  						     GtkWindow            *parent,
- 						     GtkFileChooserAction  action,

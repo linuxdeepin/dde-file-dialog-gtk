@@ -21,6 +21,9 @@
 #define d_debug(format, ...)
 #endif
 
+#define GTK_OBJECT G_OBJECT
+#define D_EXPORT __attribute__((visibility("default")))
+
 typedef enum {
     AnyFile = 0,
     ExistingFile = 1,
@@ -50,10 +53,10 @@ typedef enum {
     DontUseCustomDirectoryIcons = 0x00000080
 } Option;
 
-//! The code from libgtk+2.0 source
+//! The code from libgtk+3.0 source
 struct _GtkFileFilter
 {
-  GtkObject parent_instance;
+  GInitiallyUnowned parent_instance;
 
   gchar *name;
   GSList *rules;
@@ -72,7 +75,7 @@ typedef struct _FilterRule
 {
   FilterRuleType type;
   GtkFileFilterFlags needed;
-
+  
   union {
     gchar *pattern;
     gchar *mime_type;
@@ -542,7 +545,7 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
     (void)user_data;
 
     guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
-    gtk_timeout_remove(timeout_handler_id);
+    g_source_remove(timeout_handler_id);
 
     d_debug("d_on_gtk_filedialog_destroy\n");
 }
@@ -799,6 +802,7 @@ void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reje
     }
 }
 
+D_EXPORT
 GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                        GtkWindow            *parent,
                                        GtkFileChooserAction  action,
@@ -857,9 +861,9 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     if (!getenv("_d_show_gtk_file_chooser_dialog")) {
         gtk_window_set_opacity(GTK_WINDOW(result), 0);
-        char invisible_bitmap_bits[] = { 0x0 };
-        GdkBitmap *bitmap = gdk_bitmap_create_from_data(NULL, invisible_bitmap_bits, 1, 1);
-        gtk_widget_shape_combine_mask(result, bitmap, 0, 0);
+        cairo_rectangle_int_t rectangle;
+        rectangle.x = rectangle.y = rectangle.width = rectangle.height = 0;
+        gtk_widget_shape_combine_region(result, cairo_region_create_rectangle(&rectangle));
 
         if (parent) {
             gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
@@ -924,7 +928,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                                             "heartbeatInterval",
                                                             "i",
                                                             &interval)) {
-        guint timeout_handler_id = gtk_timeout_add(MAX(1 * 1000, MIN((int)(interval / 1.5), interval - 5 * 1000)), d_heartbeat_filedialog, result);
+        guint timeout_handler_id = g_timeout_add(MAX(1 * 1000, MIN((int)(interval / 1.5), interval - 5 * 1000)), d_heartbeat_filedialog, result);
         g_object_set_data(GTK_OBJECT(result), D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id), timeout_handler_id);
         g_signal_connect(result, "destroy", G_CALLBACK(d_on_gtk_filedialog_destroy), NULL);
     }
@@ -932,6 +936,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
     return result;
 }
 
+D_EXPORT
 void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction action)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -976,6 +981,7 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
 
 //}
 
+D_EXPORT
 void gtk_file_chooser_set_select_multiple(GtkFileChooser *chooser, gboolean select_multiple)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -995,6 +1001,7 @@ void gtk_file_chooser_set_select_multiple(GtkFileChooser *chooser, gboolean sele
 
 //}
 
+D_EXPORT
 void gtk_file_chooser_set_show_hidden(GtkFileChooser *chooser, gboolean show_hidden)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -1030,6 +1037,7 @@ void gtk_file_chooser_set_show_hidden(GtkFileChooser *chooser, gboolean show_hid
 /* Suggested name for the Save-type actions
  */
 
+D_EXPORT
 void gtk_file_chooser_set_current_name(GtkFileChooser *chooser, const gchar *name)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -1043,6 +1051,7 @@ void gtk_file_chooser_set_current_name(GtkFileChooser *chooser, const gchar *nam
                                                 NULL, NULL);
 }
 
+D_EXPORT
 gchar *gtk_file_chooser_get_filename(GtkFileChooser *chooser)
 {
     GFile *file;
@@ -1081,6 +1090,7 @@ gchar *gtk_file_chooser_get_filename(GtkFileChooser *chooser)
 
 //}
 
+D_EXPORT
 GSList *gtk_file_chooser_get_filenames(GtkFileChooser *chooser)
 {
     GSList *files, *result;
@@ -1096,6 +1106,7 @@ GSList *gtk_file_chooser_get_filenames(GtkFileChooser *chooser)
     return result;
 }
 
+D_EXPORT
 gboolean gtk_file_chooser_set_current_folder(GtkFileChooser *chooser, const gchar *filename)
 {
     GFile *file;
@@ -1118,6 +1129,7 @@ gboolean gtk_file_chooser_set_current_folder(GtkFileChooser *chooser, const gcha
 
 /* URI manipulation
  */
+D_EXPORT
 gchar *gtk_file_chooser_get_uri(GtkFileChooser *chooser)
 {
     GFile *file;
@@ -1162,6 +1174,7 @@ gchar *gtk_file_chooser_get_uri(GtkFileChooser *chooser)
 
 //}
 
+D_EXPORT
 GSList * gtk_file_chooser_get_uris (GtkFileChooser *chooser)
 {
     GSList *files, *result;
@@ -1181,6 +1194,7 @@ GSList * gtk_file_chooser_get_uris (GtkFileChooser *chooser)
     return result;
 }
 
+D_EXPORT
 gboolean gtk_file_chooser_set_current_folder_uri (GtkFileChooser *chooser, const gchar *uri)
 {
     GFile *file;
@@ -1202,6 +1216,7 @@ gboolean gtk_file_chooser_set_current_folder_uri (GtkFileChooser *chooser, const
 //}
 
 /* GFile manipulation */
+D_EXPORT
 GFile *gtk_file_chooser_get_file (GtkFileChooser *chooser)
 {
     GSList *list;
@@ -1237,6 +1252,7 @@ GFile *gtk_file_chooser_get_file (GtkFileChooser *chooser)
 
 //}
 
+D_EXPORT
 GSList *gtk_file_chooser_get_files (GtkFileChooser *chooser)
 {
     GVariantIter *selected_files = NULL;
@@ -1276,6 +1292,7 @@ GSList *gtk_file_chooser_get_files (GtkFileChooser *chooser)
     return file_list_first;
 }
 
+D_EXPORT
 gboolean gtk_file_chooser_set_current_folder_file (GtkFileChooser *chooser, GFile *file, GError **error)
 {
     g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
@@ -1360,6 +1377,7 @@ gboolean gtk_file_chooser_set_current_folder_file (GtkFileChooser *chooser, GFil
 /* List of user selectable filters
  */
 
+D_EXPORT
 void gtk_file_chooser_add_filter (GtkFileChooser *chooser, GtkFileFilter *filter)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -1369,6 +1387,7 @@ void gtk_file_chooser_add_filter (GtkFileChooser *chooser, GtkFileFilter *filter
     d_update_filedialog_name_filters(chooser);
 }
 
+D_EXPORT
 void gtk_file_chooser_remove_filter (GtkFileChooser *chooser, GtkFileFilter  *filter)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
@@ -1385,6 +1404,7 @@ void gtk_file_chooser_remove_filter (GtkFileChooser *chooser, GtkFileFilter  *fi
 
 /* Current filter
  */
+D_EXPORT
 void gtk_file_chooser_set_filter (GtkFileChooser *chooser, GtkFileFilter *filter)
 {
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
