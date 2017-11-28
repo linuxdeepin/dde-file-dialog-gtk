@@ -315,3 +315,15 @@ Last-Update: 2017-11-24
  GDK_AVAILABLE_IN_ALL
  GtkWidget *gtk_file_chooser_dialog_new              (const gchar          *title,
  						     GtkWindow            *parent,
+--- gtk+3.0-3.22.17.orig/testsuite/gtk/templates.c
++++ gtk+3.0-3.22.17/testsuite/gtk/templates.c
+@@ -376,9 +376,6 @@
+   g_test_add_func ("/Template/GtkAppChooserWidget/Basic", test_app_chooser_widget_basic);
+   g_test_add_func ("/Template/GtkAppChooserDialog/Basic", test_app_chooser_dialog_basic);
+   g_test_add_func ("/Template/GtkColorChooserDialog/Basic", test_color_chooser_dialog_basic);
+-  g_test_add_func ("/Template/GtkFileChooserWidget/Basic", test_file_chooser_widget_basic);
+-  g_test_add_func ("/Template/GtkFileChooserDialog/Basic", test_file_chooser_dialog_basic);
+-  g_test_add_func ("/Template/GtkFileChooserButton/Basic", test_file_chooser_button_basic);
+   g_test_add_func ("/Template/GtkFontButton/Basic", test_font_button_basic);
+   g_test_add_func ("/Template/GtkFontChooserWidget/Basic", test_font_chooser_widget_basic);
+   g_test_add_func ("/Template/GtkFontChooserDialog/Basic", test_font_chooser_dialog_basic);
