@@ -21,7 +21,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2017-11-24
+Last-Update: 2017-12-07
 
 --- gtk+3.0-3.22.17.orig/gtk/Makefile.am
 +++ gtk+3.0-3.22.17/gtk/Makefile.am
@@ -315,15 +315,33 @@ Last-Update: 2017-11-24
  GDK_AVAILABLE_IN_ALL
  GtkWidget *gtk_file_chooser_dialog_new              (const gchar          *title,
  						     GtkWindow            *parent,
---- gtk+3.0-3.22.17.orig/testsuite/gtk/templates.c
-+++ gtk+3.0-3.22.17/testsuite/gtk/templates.c
-@@ -376,9 +376,6 @@
-   g_test_add_func ("/Template/GtkAppChooserWidget/Basic", test_app_chooser_widget_basic);
-   g_test_add_func ("/Template/GtkAppChooserDialog/Basic", test_app_chooser_dialog_basic);
-   g_test_add_func ("/Template/GtkColorChooserDialog/Basic", test_color_chooser_dialog_basic);
--  g_test_add_func ("/Template/GtkFileChooserWidget/Basic", test_file_chooser_widget_basic);
--  g_test_add_func ("/Template/GtkFileChooserDialog/Basic", test_file_chooser_dialog_basic);
--  g_test_add_func ("/Template/GtkFileChooserButton/Basic", test_file_chooser_button_basic);
-   g_test_add_func ("/Template/GtkFontButton/Basic", test_font_button_basic);
-   g_test_add_func ("/Template/GtkFontChooserWidget/Basic", test_font_chooser_widget_basic);
-   g_test_add_func ("/Template/GtkFontChooserDialog/Basic", test_font_chooser_dialog_basic);
+--- gtk+3.0-3.22.17.orig/testsuite/Makefile.am
++++ gtk+3.0-3.22.17/testsuite/Makefile.am
+@@ -1,6 +1,6 @@
+ include $(top_srcdir)/Makefile.decl
+ 
+-SUBDIRS = gdk gtk a11y css reftests tools
++SUBDIRS = gdk a11y css tools
+ 
+ -include $(top_srcdir)/git.mk
+
+--- gtk+3.0-3.22.17.orig/gtk/gtkfilechoosernative.c
++++ gtk+3.0-3.22.17/gtk/gtkfilechoosernative.c
+@@ -40,6 +40,7 @@
+ #include "gtklabel.h"
+ #include "gtkfilechooserentry.h"
+ #include "gtkfilefilterprivate.h"
++#include "gtkfilechoosernative.h"
+ 
+ /**
+  * SECTION:gtkfilechoosernative
+--- gtk+3.0-3.22.17.orig/gtk/gtkfilechoosernative.h
++++ gtk+3.0-3.22.17/gtk/gtkfilechoosernative.h
+@@ -33,6 +33,7 @@ G_BEGIN_DECLS
+ GDK_AVAILABLE_IN_3_20
+ G_DECLARE_FINAL_TYPE (GtkFileChooserNative, gtk_file_chooser_native, GTK, FILE_CHOOSER_NATIVE, GtkNativeDialog)
+ 
++__attribute__((weak))
+ GDK_AVAILABLE_IN_3_20
+ GtkFileChooserNative *gtk_file_chooser_native_new (const gchar          *title,
+                                                    GtkWindow            *parent,
