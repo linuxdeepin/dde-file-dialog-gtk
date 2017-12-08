@@ -21,7 +21,7 @@ Bug-Debian: https://bugs.debian.org/<bugnumber>
 Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
 Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
-Last-Update: 2017-12-07
+Last-Update: 2017-12-08
 
 --- gtk+3.0-3.22.17.orig/gtk/Makefile.am
 +++ gtk+3.0-3.22.17/gtk/Makefile.am
@@ -305,16 +305,29 @@ Last-Update: 2017-12-07
  GDK_AVAILABLE_IN_3_22
  const char *gtk_file_chooser_get_choice              (GtkFileChooser  *chooser,
                                                        const char      *id);
---- gtk+3.0-3.22.17.orig/gtk/gtkfilechooserdialog.h
-+++ gtk+3.0-3.22.17/gtk/gtkfilechooserdialog.h
-@@ -59,6 +59,7 @@ struct _GtkFileChooserDialogClass
+--- gtk+3.0-3.22.17.orig/gtk/gtkfilechooserdialog.c
++++ gtk+3.0-3.22.17/gtk/gtkfilechooserdialog.c
+@@ -283,6 +283,10 @@ gtk_file_chooser_dialog_class_init (GtkF
+   gtk_widget_class_bind_template_callback (widget_class, file_chooser_widget_selection_changed);
+ }
  
- GDK_AVAILABLE_IN_ALL
- GType      gtk_file_chooser_dialog_get_type         (void) G_GNUC_CONST;
 +__attribute__((weak))
- GDK_AVAILABLE_IN_ALL
- GtkWidget *gtk_file_chooser_dialog_new              (const gchar          *title,
- 						     GtkWindow            *parent,
++GDK_AVAILABLE_IN_ALL
++void _d_ddefiledialog_override_gtk_dialog(GtkWidget *);
++
+ static void
+ gtk_file_chooser_dialog_init (GtkFileChooserDialog *dialog)
+ {
+@@ -294,6 +298,9 @@ gtk_file_chooser_dialog_init (GtkFileCho
+ 
+   _gtk_file_chooser_set_delegate (GTK_FILE_CHOOSER (dialog),
+                                   GTK_FILE_CHOOSER (dialog->priv->widget));
++
++  if (_d_ddefiledialog_override_gtk_dialog)
++    _d_ddefiledialog_override_gtk_dialog(dialog);
+ }
+ 
+ static GtkWidget *
 --- gtk+3.0-3.22.17.orig/testsuite/Makefile.am
 +++ gtk+3.0-3.22.17/testsuite/Makefile.am
 @@ -1,6 +1,6 @@
@@ -324,24 +337,3 @@ Last-Update: 2017-12-07
 +SUBDIRS = gdk a11y css tools
  
  -include $(top_srcdir)/git.mk
-
---- gtk+3.0-3.22.17.orig/gtk/gtkfilechoosernative.c
-+++ gtk+3.0-3.22.17/gtk/gtkfilechoosernative.c
-@@ -40,6 +40,7 @@
- #include "gtklabel.h"
- #include "gtkfilechooserentry.h"
- #include "gtkfilefilterprivate.h"
-+#include "gtkfilechoosernative.h"
- 
- /**
-  * SECTION:gtkfilechoosernative
---- gtk+3.0-3.22.17.orig/gtk/gtkfilechoosernative.h
-+++ gtk+3.0-3.22.17/gtk/gtkfilechoosernative.h
-@@ -33,6 +33,7 @@ G_BEGIN_DECLS
- GDK_AVAILABLE_IN_3_20
- G_DECLARE_FINAL_TYPE (GtkFileChooserNative, gtk_file_chooser_native, GTK, FILE_CHOOSER_NATIVE, GtkNativeDialog)
- 
-+__attribute__((weak))
- GDK_AVAILABLE_IN_3_20
- GtkFileChooserNative *gtk_file_chooser_native_new (const gchar          *title,
-                                                    GtkWindow            *parent,

@@ -2,7 +2,6 @@
 #include <gtk/gtkfilechooserprivate.h>
 #include <gtk/gtkfilefilter.h>
 #include <gdk/x11/gdkx.h>
-#include "gtkfilechoosernativeprivate.h"
 
 #include <X11/Xlib.h>
 
@@ -76,7 +75,7 @@ typedef struct _FilterRule
 {
   FilterRuleType type;
   GtkFileFilterFlags needed;
-  
+
   union {
     gchar *pattern;
     gchar *mime_type;
@@ -88,39 +87,6 @@ typedef struct _FilterRule
     } custom;
   } u;
 } FilterRule;
-
-static GtkWidget *
-gtk_file_chooser_dialog_new_valist(const gchar              *title,
-                                   GtkWindow                *parent,
-                                   GtkFileChooserAction     action,
-                                   const gchar              *backend,
-                                   const gchar              *first_button_text,
-                                   va_list                  varargs)
-{
-    (void)backend;
-
-    GtkWidget *result;
-    const char *button_text = first_button_text;
-    gint response_id;
-
-    result = g_object_new (GTK_TYPE_FILE_CHOOSER_DIALOG,
-                           "title", title,
-                           "action", action,
-                           NULL);
-
-    if (parent)
-        gtk_window_set_transient_for (GTK_WINDOW (result), parent);
-
-    while (button_text)
-    {
-        response_id = va_arg (varargs, gint);
-        gtk_dialog_add_button (GTK_DIALOG (result), button_text, response_id);
-        d_debug("button text: %s, response id: %d\n", button_text, response_id);
-        button_text = va_arg (varargs, const gchar *);
-    }
-
-    return result;
-}
 
 static GSList *
 files_to_strings (GSList  *files,
@@ -418,6 +384,18 @@ static guint d_dbus_filedialog_connection_signal(const gchar            *object_
 
 static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
 {
+    const gchar *title = gtk_window_get_title(GTK_WINDOW(widget_ghost));
+    GtkFileChooserAction action = gtk_file_chooser_get_action(GTK_FILE_CHOOSER(widget_ghost));
+
+    gtk_file_chooser_set_action(GTK_FILE_CHOOSER(widget_ghost), action);
+
+    if (title) {
+        d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost,
+                                                    "setWindowTitle",
+                                                    g_variant_new("(s)", title),
+                                                    NULL, NULL);
+    }
+
     if (!d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost, "show", NULL, NULL, NULL))
         return;
 
@@ -804,9 +782,7 @@ void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reje
 }
 
 static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
-                                             const gchar          *title,
-                                             GtkWindow            *parent,
-                                             GtkFileChooserAction  action)
+                                             GtkWindow            *parent)
 {
     if (getenv("_d_disable_filedialog")) {
         return FALSE;
@@ -882,11 +858,6 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
     g_signal_connect(dialog, "show", G_CALLBACK(d_show_dbus_filedialog), dialog);
     g_signal_connect(dialog, "hide", G_CALLBACK(d_hide_dbus_filedialog), dialog);
 
-    gtk_file_chooser_set_action(GTK_FILE_CHOOSER(dialog), action);
-    d_dbus_filedialog_call_by_ghost_widget_sync(dialog,
-                                                "setWindowTitle",
-                                                g_variant_new("(s)", title),
-                                                NULL, NULL);
     d_dbus_filedialog_call_by_ghost_widget_sync(dialog,
                                                 "setOption",
                                                 g_variant_new("(ib)", (gint32)HideNameFilterDetails, True),
@@ -926,48 +897,11 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
     return TRUE;
 }
 
-D_EXPORT
-GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
-                                       GtkWindow            *parent,
-                                       GtkFileChooserAction  action,
-                                       const gchar          *first_button_text,
-                                       ...)
+D_EXPORT void _d_ddefiledialog_override_gtk_dialog(GtkWidget *dialog)
 {
-    d_debug("title: %s, action: %d, first button text: %s\n", title, action, first_button_text);
+    GtkWindow *parent = gtk_window_get_transient_for(GTK_WINDOW(dialog));
 
-    va_list varargs;
-    va_start (varargs, first_button_text);
-    GtkWidget *result = gtk_file_chooser_dialog_new_valist (title, parent, action,
-                                                 NULL, first_button_text,
-                                                 varargs);
-    va_end (varargs);
-
-    hook_gtk_file_chooser_dialog(result, title, parent, action);
-
-    return result;
-}
-
-D_EXPORT
-GDK_AVAILABLE_IN_3_20
-GtkFileChooserNative *gtk_file_chooser_native_new (const gchar          *title,
-                                                   GtkWindow            *parent,
-                                                   GtkFileChooserAction  action,
-                                                   const gchar          *accept_label,
-                                                   const gchar          *cancel_label)
-{
-    GtkFileChooserNative *result;
-
-    result = g_object_new (GTK_TYPE_FILE_CHOOSER_NATIVE,
-                           "title", title,
-                           "action", action,
-                           "transient-for", parent,
-                           "accept-label", accept_label,
-                           "cancel-label", cancel_label,
-                           NULL);
-
-    hook_gtk_file_chooser_dialog(result->dialog, title, parent, action);
-
-    return result;
+    hook_gtk_file_chooser_dialog(dialog, parent);
 }
 
 D_EXPORT
