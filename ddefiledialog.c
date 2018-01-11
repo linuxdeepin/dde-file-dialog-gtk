@@ -852,6 +852,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     gtk_window_set_decorated(GTK_WINDOW(result), FALSE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(result), FALSE);
 
     d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
 
