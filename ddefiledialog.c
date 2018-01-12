@@ -423,6 +423,7 @@ static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
         return;
 
     XSetTransientForHint(gdk_x11_get_default_xdisplay(), dbus_dialog_winId, GDK_WINDOW_XID(gtk_widget_get_window(widget_ghost)));
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost), FALSE);
 }
 
 static void d_hide_dbus_filedialog(GtkWidget *widget_ghost)
