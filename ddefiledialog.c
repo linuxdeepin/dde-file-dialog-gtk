@@ -423,7 +423,6 @@ static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
         return;
 
     XSetTransientForHint(gdk_x11_get_default_xdisplay(), dbus_dialog_winId, GDK_WINDOW_XID(gtk_widget_get_window(widget_ghost)));
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost), FALSE);
 }
 
 static void d_hide_dbus_filedialog(GtkWidget *widget_ghost)
@@ -775,6 +774,13 @@ static void d_on_filedialog_selected_filter_changed(GDBusConnection  *connection
     g_free(selected_filter);
 }
 
+static void _gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
+{
+    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
+
+    g_object_set (chooser, "do-overwrite-confirmation", do_overwrite_confirmation, NULL);
+}
+
 void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
 {
     if (accept_id) {
@@ -853,7 +859,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     gtk_window_set_decorated(GTK_WINDOW(result), FALSE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(result), FALSE);
+    _gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(result), FALSE);
 
     d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
 
@@ -1009,15 +1015,32 @@ void gtk_file_chooser_set_show_hidden(GtkFileChooser *chooser, gboolean show_hid
 
 //}
 
-//void gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
-//{
+void gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
+{
+    _gtk_file_chooser_set_do_overwrite_confirmation(chooser, FALSE);
 
-//}
+    d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+                                                "setOption",
+                                                g_variant_new("(ib)", (gint32)DontConfirmOverwrite, !do_overwrite_confirmation),
+                                                NULL, NULL);
+}
 
-//gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
-//{
+gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
+{
+    gboolean do_overwrite_confirmation;
 
-//}
+    if (!d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser), "testOption",
+                                                     g_variant_new("(i)", (gint32)DontConfirmOverwrite),
+                                                     "b", &do_overwrite_confirmation)) {
+        return !do_overwrite_confirmation;
+    }
+
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
+
+    g_object_get (chooser, "do-overwrite-confirmation", &do_overwrite_confirmation, NULL);
+
+    return do_overwrite_confirmation;
+}
 
 //void gtk_file_chooser_set_create_folders(GtkFileChooser *chooser, gboolean create_folders)
 //{
