@@ -757,6 +757,13 @@ static void d_on_filedialog_selected_filter_changed(GDBusConnection  *connection
     g_free(selected_filter);
 }
 
+static void _gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
+{
+    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
+
+    g_object_set (chooser, "do-overwrite-confirmation", do_overwrite_confirmation, NULL);
+}
+
 void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
 {
     if (accept_id) {
@@ -823,7 +830,7 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
 
     gtk_window_set_decorated(GTK_WINDOW(dialog), FALSE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(dialog), TRUE);
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(dialog), FALSE);
+    _gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(dialog), FALSE);
 
     d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
 
@@ -984,15 +991,32 @@ void gtk_file_chooser_set_show_hidden(GtkFileChooser *chooser, gboolean show_hid
 
 //}
 
-//void gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
-//{
+void gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
+{
+    _gtk_file_chooser_set_do_overwrite_confirmation(chooser, FALSE);
 
-//}
+    d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+                                                "setOption",
+                                                g_variant_new("(ib)", (gint32)DontConfirmOverwrite, do_overwrite_confirmation),
+                                                NULL, NULL);
+}
 
-//gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
-//{
+gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
+{
+    gboolean do_overwrite_confirmation;
 
-//}
+    if (!d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser), "testOption",
+                                                     g_variant_new("(i)", (gint32)DontConfirmOverwrite),
+                                                     "b", &do_overwrite_confirmation)) {
+        return do_overwrite_confirmation;
+    }
+
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
+
+    g_object_get (chooser, "do-overwrite-confirmation", &do_overwrite_confirmation, NULL);
+
+    return do_overwrite_confirmation;
+}
 
 //void gtk_file_chooser_set_create_folders(GtkFileChooser *chooser, gboolean create_folders)
 //{
