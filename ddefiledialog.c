@@ -405,7 +405,6 @@ static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
         return;
 
     XSetTransientForHint(gdk_x11_get_default_xdisplay(), dbus_dialog_winId, GDK_WINDOW_XID(gtk_widget_get_window(widget_ghost)));
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost), FALSE);
 }
 
 static void d_hide_dbus_filedialog(GtkWidget *widget_ghost)
@@ -991,16 +990,18 @@ void gtk_file_chooser_set_show_hidden(GtkFileChooser *chooser, gboolean show_hid
 
 //}
 
+D_EXPORT
 void gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
 {
     _gtk_file_chooser_set_do_overwrite_confirmation(chooser, FALSE);
 
     d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
                                                 "setOption",
-                                                g_variant_new("(ib)", (gint32)DontConfirmOverwrite, do_overwrite_confirmation),
+                                                g_variant_new("(ib)", (gint32)DontConfirmOverwrite, !do_overwrite_confirmation),
                                                 NULL, NULL);
 }
 
+D_EXPORT
 gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
 {
     gboolean do_overwrite_confirmation;
@@ -1008,7 +1009,7 @@ gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
     if (!d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser), "testOption",
                                                      g_variant_new("(i)", (gint32)DontConfirmOverwrite),
                                                      "b", &do_overwrite_confirmation)) {
-        return do_overwrite_confirmation;
+        return !do_overwrite_confirmation;
     }
 
     g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
