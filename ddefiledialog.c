@@ -218,8 +218,8 @@ static gboolean d_dbus_filedialog_call_by_ghost_widget_sync(GtkWidget       *wid
         g_variant_get(result, reply_type, reply_data);
 
     if (result) {
-        const gchar *tmp_variant_print = g_variant_print(result, TRUE);
-        const gchar *tmp_variant_type_string = g_variant_get_type_string(result);
+        gchar *tmp_variant_print = g_variant_print(result, TRUE);
+        gchar *tmp_variant_type_string = g_variant_get_type_string(result);
 
         d_debug("%s, type=%s\n", tmp_variant_print, tmp_variant_type_string);
         g_free(tmp_variant_print);
@@ -246,8 +246,8 @@ static gboolean d_dbus_filedialogmanager_call_by_ghost_widget_sync(const gchar  
         g_variant_get(result, reply_type, reply_data);
 
     if (result) {
-        const gchar *tmp_variant_print = g_variant_print(result, TRUE);
-        const gchar *tmp_variant_type_string = g_variant_get_type_string(result);
+        gchar *tmp_variant_print = g_variant_print(result, TRUE);
+        gchar *tmp_variant_type_string = g_variant_get_type_string(result);
 
         d_debug("%s, type=%s\n", tmp_variant_print, tmp_variant_type_string);
         g_free(tmp_variant_print);
@@ -305,8 +305,8 @@ static gboolean d_dbus_filedialog_get_property_by_ghost_widget_sync(GtkWidget   
         g_variant_get(result, reply_type, reply_data);
 
     if (result) {
-        const gchar *tmp_variant_print = g_variant_print(result, TRUE);
-        const gchar *tmp_variant_type_string = g_variant_get_type_string(result);
+        gchar *tmp_variant_print = g_variant_print(result, TRUE);
+        gchar *tmp_variant_type_string = g_variant_get_type_string(result);
 
         d_debug("%s, type=%s\n", tmp_variant_print, tmp_variant_type_string);
         g_free(tmp_variant_print);
@@ -476,7 +476,7 @@ static void d_on_dbus_filedialog_selectionFilesChanged(GDBusConnection  *connect
     int selected_files_length = g_variant_iter_n_children(selected_files);
 
     for (int i = 0; i < selected_files_length; ++i) {
-        const gchar *file_uri = g_variant_get_string(g_variant_iter_next_value(selected_files), NULL);
+        gchar *file_uri = g_variant_get_string(g_variant_iter_next_value(selected_files), NULL);
 
         gtk_file_chooser_select_uri(GTK_FILE_CHOOSER_DIALOG(widget_ghost), file_uri);
         d_debug("selected file uri=%s\n", file_uri);
@@ -626,7 +626,7 @@ static GByteArray *d_gtk_file_filter_to_string(const GtkFileFilter *filter)
             d_debug("mimes length: %d\n", mimes_length);
 
             for (int j = 0; j < mimes_length; ++j) {
-                const gchar *pattern = g_variant_get_string(g_variant_iter_next_value(patterns), NULL);
+                gchar *pattern = g_variant_get_string(g_variant_iter_next_value(patterns), NULL);
 
                 d_debug("%d: pattern: %s\n", j, pattern);
 
@@ -847,6 +847,15 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
     }
 
     g_object_set_data(GTK_OBJECT(dialog), D_STRINGIFY(_d_dbus_file_dialog_object_path), dbus_object_path);
+
+    // Init the dbus file chooser dialog
+    d_dbus_filedialog_set_property_by_ghost_widget_sync(GTK_WIDGET(dialog),
+                                                        "hideOnAccept",
+                                                        g_variant_new_boolean(FALSE));
+    d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(dialog),
+                                                "addDisableUrlScheme",
+                                                g_variant_new_string("tag"),
+                                                NULL, NULL);
 
     // Sync current uri
     gchar *current_folder_uri = gtk_file_chooser_get_current_folder_uri(dialog);
@@ -1271,7 +1280,7 @@ GSList *gtk_file_chooser_get_files (GtkFileChooser *chooser)
     int selected_files_length = g_variant_iter_n_children(selected_files);
 
     for (int i = 0; i < selected_files_length; ++i) {
-        const gchar *file_path = g_variant_get_string(g_variant_iter_next_value(selected_files), NULL);
+        gchar *file_path = g_variant_get_string(g_variant_iter_next_value(selected_files), NULL);
         GFile *file = g_file_new_for_path(file_path);
         g_free(file_path);
 
