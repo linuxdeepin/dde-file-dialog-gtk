@@ -244,6 +244,8 @@ static gboolean d_dbus_filedialog_call_by_ghost_widget_sync(GtkWidget       *wid
                                               (const GVariantType *)reply_type,
                                               &result);
 
+    d_debug("method name: %s, call finished: %d\n", method_name, ok);
+
     if (reply_data)
         g_variant_get(result, reply_type, reply_data);
 
@@ -350,6 +352,8 @@ static gboolean d_dbus_filedialog_set_property_by_ghost_widget_sync(GtkWidget   
                                                                     const gchar *property_name,
                                                                     GVariant    *value)
 {
+    d_debug("property name: %s\n", property_name);
+
     GDBusConnection *dbus_connection = get_connection();
 
     if (!dbus_connection) {
@@ -779,6 +783,8 @@ static void _gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *choo
     g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
 
     g_object_set (chooser, "do-overwrite-confirmation", do_overwrite_confirmation, NULL);
+
+    d_debug("value: %d\n", do_overwrite_confirmation);
 }
 
 void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
@@ -884,7 +890,7 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
                                                         g_variant_new_boolean(FALSE));
     d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(result),
                                                 "addDisableUrlScheme",
-                                                g_variant_new_string("tag"),
+                                                g_variant_new("(s)", "tag"),
                                                 NULL, NULL);
 
     // Sync current uri
@@ -966,6 +972,15 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
                                                             "acceptMode",
                                                             g_variant_new_int32(AcceptOpen));
 
+        gboolean select_multiple = gtk_file_chooser_get_select_multiple(GTK_WIDGET(chooser));
+
+        d_debug("select multiple: %d\n", select_multiple);
+
+        d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+                                                    "setFileMode",
+                                                    g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
+                                                    NULL, NULL);
+
         break;
     case GTK_FILE_CHOOSER_ACTION_SAVE:
         d_dbus_filedialog_set_property_by_ghost_widget_sync(GTK_WIDGET(chooser),
@@ -1040,13 +1055,17 @@ gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
 
     if (!d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser), "testOption",
                                                      g_variant_new("(i)", (gint32)DontConfirmOverwrite),
-                                                     "b", &do_overwrite_confirmation)) {
+                                                     "(b)", &do_overwrite_confirmation)) {
+
+        d_debug("dbus value: %d\n", do_overwrite_confirmation);
+
         return !do_overwrite_confirmation;
     }
 
     g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
 
     g_object_get (chooser, "do-overwrite-confirmation", &do_overwrite_confirmation, NULL);
+    d_debug("value: %d\n", do_overwrite_confirmation);
 
     return do_overwrite_confirmation;
 }
