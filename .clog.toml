@@ -1,0 +1,4 @@
+[clog]
+repository = "https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk2"
+changelog = "CHANGELOG.md"
+from-latest-tag = true
