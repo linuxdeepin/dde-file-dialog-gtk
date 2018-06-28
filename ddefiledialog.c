@@ -967,6 +967,7 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
                                                     "setFileMode",
                                                     g_variant_new("(i)", Directory),
                                                     NULL, NULL);
+        // no break
     case GTK_FILE_CHOOSER_ACTION_OPEN:
         d_dbus_filedialog_set_property_by_ghost_widget_sync(GTK_WIDGET(chooser),
                                                             "acceptMode",
@@ -974,12 +975,14 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
 
         gboolean select_multiple = gtk_file_chooser_get_select_multiple(GTK_WIDGET(chooser));
 
-        d_debug("select multiple: %d\n", select_multiple);
+        if (action == GTK_FILE_CHOOSER_ACTION_OPEN) {
+            d_debug("select multiple: %d\n", select_multiple);
 
-        d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
-                                                    "setFileMode",
-                                                    g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
-                                                    NULL, NULL);
+            d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+                                                        "setFileMode",
+                                                        g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
+                                                        NULL, NULL);
+        }
 
         break;
     case GTK_FILE_CHOOSER_ACTION_SAVE:
