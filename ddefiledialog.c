@@ -817,7 +817,7 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
     g_object_unref(file_this);
 
     ok = d_dbus_filedialogmanager_call_by_ghost_widget_sync("canUseFileChooserDialog",
-                                                            g_variant_new("(ss)", "gtk2", file_basename),
+                                                            g_variant_new("(ss)", "gtk3", file_basename),
                                                             "(b)", &enable_dbus_dialog);
     free(file_basename);
 
