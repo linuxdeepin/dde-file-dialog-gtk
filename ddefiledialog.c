@@ -545,6 +545,8 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
     (void)object;
     (void)user_data;
 
+    d_dbus_filedialog_call_by_ghost_widget_sync(object, "deleteLater", NULL, NULL, NULL);
+
     guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
     gtk_timeout_remove(timeout_handler_id);
 
@@ -874,9 +876,9 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
         char invisible_bitmap_bits[] = { 0x0 };
         GdkBitmap *bitmap = gdk_bitmap_create_from_data(NULL, invisible_bitmap_bits, 1, 1);
         gtk_widget_shape_combine_mask(result, bitmap, 0, 0);
+        gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
 
         if (parent) {
-            gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
             gtk_window_set_transient_for(GTK_WINDOW (result), parent);
             gtk_widget_set_sensitive(result, FALSE);
         }
