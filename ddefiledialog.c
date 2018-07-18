@@ -527,6 +527,8 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
     (void)object;
     (void)user_data;
 
+    d_dbus_filedialog_call_by_ghost_widget_sync(object, "deleteLater", NULL, NULL, NULL);
+
     guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
     g_source_remove(timeout_handler_id);
 
@@ -844,11 +846,11 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
         cairo_rectangle_int_t rectangle;
         rectangle.x = rectangle.y = rectangle.width = rectangle.height = 0;
         gtk_widget_shape_combine_region(dialog, cairo_region_create_rectangle(&rectangle));
+        gtk_window_set_accept_focus(GTK_WINDOW(dialog), FALSE);
+        gtk_widget_set_sensitive(dialog, FALSE);
 
         if (parent) {
-            gtk_window_set_accept_focus(GTK_WINDOW(dialog), FALSE);
             gtk_window_set_transient_for(GTK_WINDOW (dialog), parent);
-            gtk_widget_set_sensitive(dialog, FALSE);
         }
     }
 
