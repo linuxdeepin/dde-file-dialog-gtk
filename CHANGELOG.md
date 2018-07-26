@@ -1,3 +1,16 @@
+<a name="2.0.1"></a>
+## 2.0.1 (2018-07-26)
+
+
+#### Bug Fixes
+
+*   can not save file ([e5da0afd](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk3/commit/e5da0afda514a1eb3f2d1e667d23b8232038ef2c))
+*   crash when enter key pressed on firefox ([1b33ae00](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk3/commit/1b33ae0028119e494644ddadf7d9830797e49b38))
+*   the group name of "canUseFileChooserDialog" ([ec3d5edc](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk3/commit/ec3d5edc23752aebfaceb29d3984eec58e676676))
+*   can not select folder ([3ea04974](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk3/commit/3ea04974ab15a9b4ba7fe4a3b67c361a25d13126))
+
+
+
 <a name="2.0.0"></a>
 ## 2.0.0 (2018-06-25)
 
