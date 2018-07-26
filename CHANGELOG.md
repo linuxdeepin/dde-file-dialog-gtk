@@ -1,3 +1,14 @@
+<a name="1.0.3"></a>
+## 1.0.3 (2018-07-26)
+
+
+#### Bug Fixes
+
+*   destroy dbus dialog when the gtk file chooser dialog destroy ([b2a8d9b2](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk2/commit/b2a8d9b2933bd4f046fd2ce6d6e1ceddc2c985c1))
+*   can not select folder ([b71b292a](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk2/commit/b71b292ac00f96cc2452673e10e8952fa6bee043))
+
+
+
 <a name="1.0.2"></a>
 ## 1.0.2 (2018-06-25)
 
