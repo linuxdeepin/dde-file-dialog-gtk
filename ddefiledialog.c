@@ -876,9 +876,10 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
         char invisible_bitmap_bits[] = { 0x0 };
         GdkBitmap *bitmap = gdk_bitmap_create_from_data(NULL, invisible_bitmap_bits, 1, 1);
         gtk_widget_shape_combine_mask(result, bitmap, 0, 0);
-        gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
 
         if (parent) {
+            // 必须放到此处设置, 否则会导致对话框关闭后焦点不会自动回到主窗口
+            gtk_window_set_accept_focus(GTK_WINDOW(result), FALSE);
             gtk_window_set_transient_for(GTK_WINDOW (result), parent);
             gtk_widget_set_sensitive(result, FALSE);
         }
