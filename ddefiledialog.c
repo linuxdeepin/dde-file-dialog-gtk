@@ -846,9 +846,10 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
         cairo_rectangle_int_t rectangle;
         rectangle.x = rectangle.y = rectangle.width = rectangle.height = 0;
         gtk_widget_shape_combine_region(dialog, cairo_region_create_rectangle(&rectangle));
-        gtk_window_set_accept_focus(GTK_WINDOW(dialog), FALSE);
 
         if (parent) {
+            // 必须放到此处设置, 否则会导致对话框关闭后焦点不会自动回到主窗口
+            gtk_window_set_accept_focus(GTK_WINDOW(dialog), FALSE);
             gtk_window_set_transient_for(GTK_WINDOW (dialog), parent);
             // 谨慎使用, 放到之前设置时, 会导致保存文件对话框点击确认按钮时无效
             gtk_widget_set_sensitive(dialog, FALSE);
