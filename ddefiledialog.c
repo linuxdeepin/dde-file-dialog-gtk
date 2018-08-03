@@ -847,6 +847,13 @@ static gboolean hook_gtk_file_chooser_dialog(GtkWidget            *dialog,
         rectangle.x = rectangle.y = rectangle.width = rectangle.height = 0;
         gtk_widget_shape_combine_region(dialog, cairo_region_create_rectangle(&rectangle));
 
+        GdkGeometry geometry;
+
+        geometry.max_width = 1;
+        geometry.max_height = 1;
+
+        gtk_window_set_geometry_hints(GTK_WINDOW(dialog), NULL, &geometry, GDK_HINT_MAX_SIZE);
+
         if (parent) {
             // 必须放到此处设置, 否则会导致对话框关闭后焦点不会自动回到主窗口
             gtk_window_set_accept_focus(GTK_WINDOW(dialog), FALSE);
