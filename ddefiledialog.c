@@ -416,8 +416,36 @@ static guint d_dbus_filedialog_connection_signal(const gchar            *object_
                                               NULL);
 }
 
+gboolean _gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
+{
+    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
+
+    gboolean do_overwrite_confirmation = FALSE;
+    g_object_get (chooser, "do-overwrite-confirmation", &do_overwrite_confirmation, NULL);
+    d_debug("value: %d\n", do_overwrite_confirmation);
+
+    return do_overwrite_confirmation;
+}
+
+static void _gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
+{
+    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
+
+    g_object_set (chooser, "do-overwrite-confirmation", do_overwrite_confirmation, NULL);
+
+    d_debug("value: %d\n", do_overwrite_confirmation);
+}
+
 static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
 {
+    // 由于在某些程序中(qt4 gtk style)会直接使用g_object_set设置do-overwrite-confirmation这个属性
+    // 所以需要在此处再次获取值传递给dbus dialog
+    gboolean do_overwrite_confirmation = _gtk_file_chooser_get_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost));
+    d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost,
+                                                "setOption",
+                                                g_variant_new("(ib)", (gint32)DontConfirmOverwrite, !do_overwrite_confirmation),
+                                                NULL, NULL);
+
     if (!d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost, "show", NULL, NULL, NULL))
         return;
 
@@ -431,6 +459,14 @@ static void d_show_dbus_filedialog(GtkWidget *widget_ghost)
 
 static void d_hide_dbus_filedialog(GtkWidget *widget_ghost)
 {
+    // 重设do-overwrite-confirmation属性的值
+    gboolean do_overwrite_confirmation = g_object_get_data(GTK_OBJECT(widget_ghost), D_STRINGIFY(_d_dbus_file_dialog_do_overwrite_confirmation));
+    if (do_overwrite_confirmation) {
+        _gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost), TRUE);
+        // 这个属性存储的不是正常指针，所以这里必须将属性值置空
+        g_object_set_data(GTK_OBJECT(widget_ghost), D_STRINGIFY(_d_dbus_file_dialog_do_overwrite_confirmation), NULL);
+    }
+
     d_dbus_filedialog_call_by_ghost_widget_sync(widget_ghost, "hide", NULL, NULL, NULL);
 }
 
@@ -459,6 +495,19 @@ static void d_on_dbus_filedialog_finished(GDBusConnection  *connection,
             g_object_unref(file);
             gtk_file_chooser_set_current_name(widget_ghost, file_basename);
             free(file_basename);
+        }
+
+        // 在show之前设置是否显示覆盖询问对话框，因为在某些程序中可能是使用g_object_set直接设置的属性
+        // 导致覆盖gtk_file_chooser_set_do_overwrite_confirmation这个函数没有生效
+        // 所以在保存文件之前将do-overwrite-confirmation属性设置为false, 在窗口隐藏时恢复此值
+        gboolean do_overwrite_confirmation = _gtk_file_chooser_get_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost));
+
+        // 将真实的do-overwrite-confirmation属性值保存到对话框对象的属性中
+        g_object_set_data(GTK_OBJECT(widget_ghost), D_STRINGIFY(_d_dbus_file_dialog_do_overwrite_confirmation), do_overwrite_confirmation);
+
+        if (do_overwrite_confirmation) {
+            // 禁用gtk对话框的文件覆盖确认对话框
+            _gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(widget_ghost), FALSE);
         }
     }
 
@@ -550,7 +599,25 @@ static void d_on_gtk_filedialog_destroy(GtkWidget *object,
     guint timeout_handler_id = g_object_get_data(object, D_STRINGIFY(_d_dbus_file_dialog_heartbeat_timer_handler_id));
     gtk_timeout_remove(timeout_handler_id);
 
+    // 这个属性存储的不是正常指针，所以这里必须将属性值置空
+    g_object_set_data(object, D_STRINGIFY(_d_dbus_file_dialog_do_overwrite_confirmation), NULL);
+
     d_debug("d_on_gtk_filedialog_destroy\n");
+}
+
+static void d_on_gtk_filedialog_select_multiple_changed(GtkFileChooser *chooser,
+                                                        GParamSpec *value)
+{
+    (void)value;
+
+    if (gtk_file_chooser_get_action(chooser) == GTK_FILE_CHOOSER_ACTION_OPEN) {
+        gboolean select_multiple = gtk_file_chooser_get_select_multiple(chooser);
+
+        d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+                                                    "setFileMode",
+                                                    g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
+                                                    NULL, NULL);
+    }
 }
 
 static void d_heartbeat_filedialog(GtkWidget *widget_ghost)
@@ -780,15 +847,6 @@ static void d_on_filedialog_selected_filter_changed(GDBusConnection  *connection
     g_free(selected_filter);
 }
 
-static void _gtk_file_chooser_set_do_overwrite_confirmation(GtkFileChooser *chooser, gboolean do_overwrite_confirmation)
-{
-    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
-
-    g_object_set (chooser, "do-overwrite-confirmation", do_overwrite_confirmation, NULL);
-
-    d_debug("value: %d\n", do_overwrite_confirmation);
-}
-
 void d_get_gtk_dialog_response_id(GtkDialog *dialog, gint *accept_id, gint *reject_id)
 {
     if (accept_id) {
@@ -867,7 +925,6 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
 
     gtk_window_set_decorated(GTK_WINDOW(result), FALSE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(result), TRUE);
-    _gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER_DIALOG(result), FALSE);
 
     d_debug("_d_show_gtk_file_chooser_dialog: %s\n", getenv("_d_show_gtk_file_chooser_dialog"));
 
@@ -913,6 +970,8 @@ GtkWidget *gtk_file_chooser_dialog_new(const gchar          *title,
     // GTK widget mapping to DBus file dialog
     g_signal_connect(result, "show", G_CALLBACK(d_show_dbus_filedialog), result);
     g_signal_connect(result, "hide", G_CALLBACK(d_hide_dbus_filedialog), result);
+    // 在有些应用中会通过g_object_set直接设置属性，此处使用这个属性的信号代替对gtk_file_chooser_set_select_multiple函数的覆盖
+    g_signal_connect(result, "notify::select-multiple", G_CALLBACK(d_on_gtk_filedialog_select_multiple_changed), NULL);
 
     gtk_file_chooser_set_action(GTK_FILE_CHOOSER(result), action);
     d_dbus_filedialog_call_by_ghost_widget_sync(result,
@@ -976,7 +1035,7 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
                                                             "acceptMode",
                                                             g_variant_new_int32(AcceptOpen));
 
-        gboolean select_multiple = gtk_file_chooser_get_select_multiple(GTK_WIDGET(chooser));
+        gboolean select_multiple = gtk_file_chooser_get_select_multiple(chooser);
 
         if (action == GTK_FILE_CHOOSER_ACTION_OPEN) {
             d_debug("select multiple: %d\n", select_multiple);
@@ -1014,19 +1073,19 @@ void gtk_file_chooser_set_action(GtkFileChooser *chooser, GtkFileChooserAction a
 
 //}
 
-void gtk_file_chooser_set_select_multiple(GtkFileChooser *chooser, gboolean select_multiple)
-{
-    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
+//void gtk_file_chooser_set_select_multiple(GtkFileChooser *chooser, gboolean select_multiple)
+//{
+//    g_return_if_fail (GTK_IS_FILE_CHOOSER (chooser));
 
-    g_object_set (chooser, "select-multiple", select_multiple, NULL);
+//    g_object_set (chooser, "select-multiple", select_multiple, NULL);
 
-    if (gtk_file_chooser_get_action(chooser) == GTK_FILE_CHOOSER_ACTION_OPEN) {
-        d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
-                                                    "setFileMode",
-                                                    g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
-                                                    NULL, NULL);
-    }
-}
+//    if (gtk_file_chooser_get_action(chooser) == GTK_FILE_CHOOSER_ACTION_OPEN) {
+//        d_dbus_filedialog_call_by_ghost_widget_sync(GTK_WIDGET(chooser),
+//                                                    "setFileMode",
+//                                                    g_variant_new("(i)", select_multiple ? ExistingFiles : ExistingFile),
+//                                                    NULL, NULL);
+//    }
+//}
 
 //gboolean gtk_file_chooser_get_select_multiple(GtkFileChooser *chooser)
 //{
@@ -1068,12 +1127,7 @@ gboolean gtk_file_chooser_get_do_overwrite_confirmation(GtkFileChooser *chooser)
         return !do_overwrite_confirmation;
     }
 
-    g_return_val_if_fail (GTK_IS_FILE_CHOOSER (chooser), FALSE);
-
-    g_object_get (chooser, "do-overwrite-confirmation", &do_overwrite_confirmation, NULL);
-    d_debug("value: %d\n", do_overwrite_confirmation);
-
-    return do_overwrite_confirmation;
+    return _gtk_file_chooser_get_do_overwrite_confirmation(chooser);
 }
 
 //void gtk_file_chooser_set_create_folders(GtkFileChooser *chooser, gboolean create_folders)
