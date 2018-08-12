@@ -1,3 +1,14 @@
+<a name="1.0.4"></a>
+## 1.0.4 (2018-08-12)
+
+
+#### Bug Fixes
+
+*   can not select multiple file on Qt4 application(if use the gtk style) ([2468f99a](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk2/commit/2468f99a3d6a5855d1b411e16de80e7a7a2286d0))
+*   the main window focus out when file chooser dialog close ([c9810146](https://github.com/linuxdeepin/dde-file-dialog-gtk/tree/gtk2/commit/c98101466926bab48ea35372f3f17ac8a40344e6))
+
+
+
 <a name="1.0.3"></a>
 ## 1.0.3 (2018-07-26)
 
